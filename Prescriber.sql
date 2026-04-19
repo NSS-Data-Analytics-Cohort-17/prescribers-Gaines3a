@@ -95,9 +95,69 @@ FROM cbsa
 JOIN fips_county ON cbsa.fipscounty = fips_county.fipscounty
 WHERE state = 'TN';
 
-Q 5. B
+--Q 5. B
 SELECT cbsa.cbsaname, population.population
 FROM cbsa
-JOIN population ON cbsa.fipscounty = fips_county.fipscounty
-ORDER BY population DESC, LIMIT 1
-ORDER BY population ASC, LIMIT 1;
+JOIN population ON cbsa.fipscounty = population.fipscounty
+ORDER BY population.population DESC 
+LIMIT 1;
+
+SELECT cbsa.cbsaname, population.population
+FROM cbsa
+JOIN population ON cbsa.fipscounty = population.fipscounty
+ORDER BY population.population ASC 
+LIMIT 1;
+
+--Q 5. C
+SELECT fips_county.county, population.population
+FROM fips_county
+JOIN population ON fips_county.fipscounty = population.fipscounty
+LEFT JOIN cbsa ON fips_county.fipscounty = cbsa.fipscounty
+WHERE cbsa.fipscounty IS NULL
+ORDER BY population.population DESC
+LIMIT 1;
+
+
+--Q 6. A
+SELECT drug_name, total_claim_count
+FROM prescription
+WHERE total_claim_count >= 3000;
+
+--Q 6. B
+SELECT drug.drug_name, prescription.total_claim_count, drug.opioid_drug_flag
+FROM prescription
+JOIN drug ON prescription.drug_name = drug.drug_name
+WHERE total_claim_count >= 3000;
+
+--Q 6. C
+SELECT drug.drug_name, prescription.total_claim_count,
+drug.opioid_drug_flag, prescriber.nppes_provider_first_name, prescriber.nppes_provider_last_org_name 
+FROM prescription
+JOIN drug ON prescription.drug_name = drug.drug_name
+JOIN prescriber ON prescription.npi = prescriber.npi
+WHERE prescription.total_claim_count >= 3000;
+
+--Q 7. A
+SELECT prescriber.npi, drug.drug_name
+FROM prescriber
+CROSS JOIN drug
+WHERE prescriber.specialty_description = 'Pain Management' AND prescriber.nppes_provider_city = 'NASHVILLE'
+AND drug.opioid_drug_flag = 'Y';
+
+Q 7. B
+SELECT prescriber.npi, drug.drug_name, prescription.total_claim_count
+FROM prescriber
+CROSS JOIN drug
+LEFT JOIN prescription ON prescriber.npi = prescription.npi AND drug.drug_name = prescription.drug_name
+WHERE prescriber.specialty_description = 'Pain Management' AND prescriber.nppes_provider_city = 'NASHVILLE'
+AND drug.opioid_drug_flag = 'Y';
+
+--Q 7. C
+SELECT prescriber.npi, drug.drug_name, 
+COALESCE (prescription.total_claim_count, 0)
+FROM prescriber
+CROSS JOIN drug
+LEFT JOIN prescription ON prescriber.npi = prescription.npi AND drug.drug_name = prescription.drug_name
+WHERE prescriber.specialty_description = 'Pain Management' AND prescriber.nppes_provider_city = 'NASHVILLE'
+AND drug.opioid_drug_flag = 'Y'
+ORDER BY total_claim_count DESC;
